@@ -32,8 +32,6 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.Properties;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 
 /**
@@ -66,25 +64,11 @@ public class ValidationsAggregatorService implements Service {
   public void start(final String bootstrapServers,
                     final String stateDir,
                     final Properties defaultConfig) {
-    final CountDownLatch startLatch = new CountDownLatch(1);
     streams = aggregateOrderValidations(bootstrapServers, stateDir, defaultConfig);
     streams.cleanUp(); //don't do this in prod as it clears your state stores
 
-    streams.setStateListener((newState, oldState) -> {
-      if (newState == KafkaStreams.State.RUNNING && oldState != KafkaStreams.State.RUNNING) {
-        startLatch.countDown();
-      }
 
-    });
     streams.start();
-
-    try {
-      if (!startLatch.await(60, TimeUnit.SECONDS)) {
-        throw new RuntimeException("Streams never finished rebalancing on startup");
-      }
-    } catch (final InterruptedException e) {
-      Thread.currentThread().interrupt();
-    }
 
     log.info("Started Service " + getClass().getSimpleName());
   }

@@ -2,8 +2,6 @@ package io.confluent.examples.streams.microservices;
 
 import java.io.IOException;
 import java.util.Optional;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig;
 import org.apache.commons.cli.*;
@@ -16,7 +14,6 @@ import org.apache.kafka.streams.StoreQueryParameters;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.errors.InvalidStateStoreException;
 import org.apache.kafka.streams.kstream.Consumed;
-import org.apache.kafka.streams.KafkaStreams.State;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.kstream.Materialized;
 import org.apache.kafka.streams.kstream.Predicate;
@@ -342,22 +339,9 @@ public class OrdersService implements Service {
         config(bootstrapServers, defaultConfig));
     metadataService = new MetadataService(streams);
     streams.cleanUp(); //don't do this in prod as it clears your state stores
-    final CountDownLatch startLatch = new CountDownLatch(1);
-    streams.setStateListener((newState, oldState) -> {
-      if (newState == State.RUNNING && oldState != KafkaStreams.State.RUNNING) {
-        startLatch.countDown();
-      }
 
-    });
     streams.start();
 
-    try {
-      if (!startLatch.await(60, TimeUnit.SECONDS)) {
-        throw new RuntimeException("Streams never finished rebalancing on startup");
-      }
-    } catch (final InterruptedException e) {
-      Thread.currentThread().interrupt();
-    }
     return streams;
   }
 

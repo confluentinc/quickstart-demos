@@ -21,9 +21,6 @@ import org.apache.kafka.streams.kstream.Consumed;
 import java.io.IOException;
 import java.util.Optional;
 import java.util.Properties;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import org.apache.kafka.streams.KafkaStreams.State;
 import org.apache.kafka.streams.kstream.GlobalKTable;
 import org.apache.kafka.streams.kstream.JoinWindows;
 import org.apache.kafka.streams.kstream.KStream;
@@ -58,23 +55,10 @@ public class EmailService implements Service {
                     final Properties defaultConfig) {
     streams = processStreams(bootstrapServers, stateDir, defaultConfig);
     streams.cleanUp(); //don't do this in prod as it clears your state stores
-    final CountDownLatch startLatch = new CountDownLatch(1);
-    streams.setStateListener((newState, oldState) -> {
-      if (newState == State.RUNNING && oldState != KafkaStreams.State.RUNNING) {
-        startLatch.countDown();
-      }
 
-    });
     streams.start();
-    try {
-      if (!startLatch.await(60, TimeUnit.SECONDS)) {
-        throw new RuntimeException("Streams never finished rebalancing on startup");
-      }
-    } catch (final InterruptedException e) {
-       Thread.currentThread().interrupt();
-    }
-    log.info("Started Service " + SERVICE_APP_ID);
 
+    log.info("Started Service " + SERVICE_APP_ID);
   }
 
   private KafkaStreams processStreams(final String bootstrapServers,

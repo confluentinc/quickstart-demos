@@ -8,15 +8,12 @@ import io.confluent.examples.streams.microservices.domain.Schemas;
 
 import java.io.IOException;
 import java.util.Optional;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 import io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig;
 import org.apache.commons.cli.*;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.StreamsBuilder;
-import org.apache.kafka.streams.KafkaStreams.State;
 
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.kstream.Consumed;
@@ -61,22 +58,8 @@ public class FraudService implements Service {
                     final Properties defaultConfig) {
     streams = processStreams(bootstrapServers, stateDir, defaultConfig);
     streams.cleanUp(); //don't do this in prod as it clears your state stores
-    final CountDownLatch startLatch = new CountDownLatch(1);
-    streams.setStateListener((newState, oldState) -> {
-      if (newState == State.RUNNING && oldState != KafkaStreams.State.RUNNING) {
-        startLatch.countDown();
-      }
 
-    });
     streams.start();
-
-    try {
-      if (!startLatch.await(60, TimeUnit.SECONDS)) {
-        throw new RuntimeException("Streams never finished rebalancing on startup");
-      }
-    } catch (final InterruptedException e) {
-      Thread.currentThread().interrupt();
-    }
 
     log.info("Started Service " + getClass().getSimpleName());
   }
