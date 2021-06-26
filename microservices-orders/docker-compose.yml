@@ -262,6 +262,7 @@ services:
       - "9200:9200"
       - "9300:9300"
     environment:
+      discovery.type: "single-node"
       xpack.security.enabled: "false"
       XPACK_SECURITY_ENABLED: "false"
       xpack.monitoring.enabled: "false"

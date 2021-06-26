@@ -12,6 +12,12 @@ ADDITIONAL_ARGS=${ADDITIONAL_ARGS:-""}
 LOG_DIR=${LOG_DIR:="logs"}
 PIDS_FILE=${PIDS_FILE:=".microservices.pids"}
 
+# check if we can write to the log directory
+if [ ! -w $LOG_DIR ]; then
+  echo "Unable to write to the logs dir with uid `id -u`. Logging to /tmp."
+  LOG_DIR=/tmp
+fi
+
 echo "Config File arg: $CONFIG_FILE_ARG"
 echo "Additional Args: $ADDITIONAL_ARGS"
 echo "Starting microservices from $JAR"
