@@ -16,13 +16,17 @@ do
       && BW2=$(docker-compose exec broker-west-2 kafka-run-class kafka.tools.JmxTool --jmx-url service:jmx:rmi:///jndi/rmi://localhost:8092/jmxrmi --object-name kafka.cluster:type=Partition,name=$metric,topic=$topic,partition=0 --one-time true | tail -n 1 | awk -F, '{print $2;}' | head -c 1) \
       || BW2=0
 
+    if [ $topic != "single-region" ]; then
     test "$(docker inspect -f '{{.State.ExitCode}}' $(docker ps -laq --filter="name=broker-east-3"))" = "0" \
       && BE3=$(docker-compose exec broker-east-3 kafka-run-class kafka.tools.JmxTool --jmx-url service:jmx:rmi:///jndi/rmi://localhost:8093/jmxrmi --object-name kafka.cluster:type=Partition,name=$metric,topic=$topic,partition=0 --one-time true | tail -n 1 | awk -F, '{print $2;}' | head -c 1) \
       || BE3=0
+    fi
 
+    if [ $topic != "single-region" ]; then
     test "$(docker inspect -f '{{.State.ExitCode}}' $(docker ps -laq --filter="name=broker-east-4"))" = "0" \
       && BE4=$(docker-compose exec broker-east-4 kafka-run-class kafka.tools.JmxTool --jmx-url service:jmx:rmi:///jndi/rmi://localhost:8094/jmxrmi --object-name kafka.cluster:type=Partition,name=$metric,topic=$topic,partition=0 --one-time true | tail -n 1 | awk -F, '{print $2;}' | head -c 1) \
       || BE4=0
+    fi
 
     REPLICAS=$((BW1 + BW2 + BE3 + BE4))
     echo "$topic: $REPLICAS"
